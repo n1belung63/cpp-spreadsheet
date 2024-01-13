@@ -7,7 +7,7 @@
 
 Cell::Impl::Impl() {}
 
-Cell::TextImpl::TextImpl(std::optional<std::unordered_set<Position, PositionHasher>>& parents) {
+Cell::TextImpl::TextImpl(CellParents& parents) {
     if (parents.has_value()) {
         for (const auto & parent : parents.value()) {
             parents_.emplace(parent);
@@ -53,11 +53,8 @@ std::unordered_set<Position, PositionHasher> Cell::TextImpl::GetParents() const 
     return parents_;
 }
 
-Cell::FormulaImpl::FormulaImpl(Position& pos, 
-    const SheetInterface& sheet, 
-    std::optional<std::unordered_set<Position, PositionHasher>>& parents,
-    std::function<std::optional<CellInterface::Value>(Position)> get_cache_func) 
-: pos_(pos), sheet_(sheet), get_cache_func_(get_cache_func) {
+Cell::FormulaImpl::FormulaImpl(Position& pos, const SheetInterface& sheet, CellParents& parents) 
+: pos_(pos), sheet_(sheet) {
     if (parents.has_value()) {
         for (const auto & parent : parents.value()) {
             parents_.emplace(parent);
@@ -108,13 +105,6 @@ void Cell::FormulaImpl::SetParent(const Position& parent_pos) {
 }
 
 CellInterface::Value Cell::FormulaImpl::GetValue() const {
-    auto cache = get_cache_func_(pos_);
-    if (cache.has_value()) {
-        if (std::holds_alternative<double>(cache.value())) {
-            return std::get<double>(cache.value());
-        }
-    }
-    
     if (std::holds_alternative<double>(value_)) {
         return std::get<double>(value_);
     } else  {
@@ -140,21 +130,21 @@ std::unordered_set<Position, PositionHasher> Cell::FormulaImpl::GetParents() con
 
 
 // Реализуйте следующие методы
-Cell::Cell(Position pos, SheetInterface& sheet, std::function<std::optional<CellInterface::Value>(Position)> get_cache_func)
-: pos_(pos), sheet_(sheet), get_cache_func_(get_cache_func) { }
+Cell::Cell(Position pos, SheetInterface& sheet)
+: pos_(pos), sheet_(sheet) { }
 
 Cell::~Cell() {
     impl_.release();
 }
 
 void Cell::Set(std::string text) {
-    std::optional<std::unordered_set<Position, PositionHasher>> parents;
+    CellParents parents;
     if (impl_ != nullptr) {
         parents = impl_->GetParents();
     }
 
     if (text.size() > 1 && text.at(0) == '=') {
-        std::unique_ptr<FormulaImpl> form(new FormulaImpl(pos_, sheet_, parents, get_cache_func_));
+        std::unique_ptr<FormulaImpl> form(new FormulaImpl(pos_, sheet_, parents));
         std::unique_ptr<Impl> temp = std::move(form);
         try {
             temp->Set(text.substr(1));

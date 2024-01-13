@@ -1,3 +1,4 @@
+#include <limits>
 #include "common.h"
 #include "formula.h"
 #include "test_runner_p.h"
@@ -24,9 +25,6 @@ inline std::ostream& operator<<(std::ostream& output, const CellInterface::Value
 }
 
 namespace {
-std::string ToString(FormulaError::Category category) {
-    return std::string(FormulaError(category).ToString());
-}
 
 void TestPositionAndStringConversion() {
     auto testSingle = [](Position pos, std::string_view str) {
@@ -157,6 +155,7 @@ void TestFormulaReferences() {
     sheet->SetCell("A1"_pos, "1");
     ASSERT_EQUAL(evaluate("A1"), 1);
     sheet->SetCell("A2"_pos, "2");
+    ASSERT_EQUAL(evaluate("A2"), 2);
     ASSERT_EQUAL(evaluate("A1+A2"), 3);
 
     // Тест на нули:
@@ -250,7 +249,7 @@ void TestErrorDiv0() {
 void TestEmptyCellTreatedAsZero() {
     auto sheet = CreateSheet();
     sheet->SetCell("A1"_pos, "=B2");
-    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(), CellInterface::Value(0));
+    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(), CellInterface::Value(0.0));
 }
 
 void TestFormulaInvalidPosition() {
@@ -347,6 +346,59 @@ void TestCellCircularReferences() {
     ASSERT(caught);
     ASSERT_EQUAL(sheet->GetCell("M6"_pos)->GetText(), "Ready");
 }
+
+void TestCache() {
+    {
+        auto sheet = CreateSheet();
+        sheet->SetCell("A4"_pos, "=1+4");
+        sheet->SetCell("A3"_pos, "=A4");
+        sheet->SetCell("A2"_pos, "=A3");
+        sheet->SetCell("A1"_pos, "=A2");
+        sheet->SetCell("A5"_pos, "=A1");
+
+        std::ostringstream texts;
+
+        sheet->PrintTexts(texts);
+        std::cout << texts.str() << std::endl << std::endl;
+
+        sheet->PrintValues(texts);
+        std::cout << texts.str() << std::endl;
+    }
+
+    {
+        auto sheet = CreateSheet();
+        sheet->SetCell("A1"_pos, "=A2");
+        sheet->SetCell("A2"_pos, "=A3");
+        sheet->SetCell("A3"_pos, "=A4");
+        sheet->SetCell("A4"_pos, "=1+4");
+        sheet->SetCell("A5"_pos, "=A1");
+
+        std::ostringstream texts;
+
+        sheet->PrintTexts(texts);
+        std::cout << texts.str() << std::endl << std::endl;
+
+        sheet->PrintValues(texts);
+        std::cout << texts.str() << std::endl;
+    }
+
+}
+
+void TestClearPrint() {
+    auto sheet = CreateSheet();
+    for (int i = 0; i <= 5; ++i) {
+      sheet->SetCell(Position{i, i}, std::to_string(i));
+    }
+
+    sheet->ClearCell(Position{3, 3});
+
+    for (int i = 5; i >= 0; --i) {
+      sheet->ClearCell(Position{i, i});
+      std::cerr << sheet->GetPrintableSize();
+    }
+    std::cerr << std::endl;
+}
+
 }  // namespace
 
 int main() {
@@ -370,4 +422,7 @@ int main() {
     RUN_TEST(tr, TestCellReferences);
     RUN_TEST(tr, TestFormulaIncorrect);
     RUN_TEST(tr, TestCellCircularReferences);
+    RUN_TEST(tr, TestCache);
+    RUN_TEST(tr, TestClearPrint);
+    return 0;
 }

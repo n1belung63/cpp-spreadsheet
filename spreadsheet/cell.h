@@ -12,7 +12,9 @@ class Sheet;
 
 class Cell : public CellInterface {
 public:
-    Cell(Position pos, SheetInterface& sheet, std::function<std::optional<CellInterface::Value>(Position)> get_cache_func);
+    using CellParents = std::optional<std::unordered_set<Position, PositionHasher>>;
+
+    Cell(Position pos, SheetInterface& sheet);
     ~Cell();
 
     void Set(std::string text);
@@ -37,11 +39,11 @@ private:
         virtual void SetParent(const Position& parent_pos) = 0;
     };
 
-    class EmptyImpl : public Impl { };
+    // class EmptyImpl : public Impl { };
 
     class TextImpl : public Impl {
     public:
-        TextImpl(std::optional<std::unordered_set<Position, PositionHasher>>& parents);
+        TextImpl(CellParents& parents);
         void Set(std::string text);
         CellInterface::Value GetValue() const;
         std::string GetText() const;
@@ -56,10 +58,7 @@ private:
 
     class FormulaImpl : public Impl {
     public:
-        FormulaImpl(Position& pos, 
-            const SheetInterface& sheet, 
-            std::optional<std::unordered_set<Position, PositionHasher>>& parents,
-            std::function<std::optional<CellInterface::Value>(Position)> get_cache_func);
+        FormulaImpl(Position& pos, const SheetInterface& sheet, CellParents& parents);
         void Set(std::string text);
         CellInterface::Value GetValue() const;
         std::string GetText() const;
@@ -77,7 +76,6 @@ private:
         std::unordered_set<Position, PositionHasher> visited_;
         std::deque<Impl*> stack_;
         std::unordered_set<Position, PositionHasher> parents_;
-        std::function<std::optional<CellInterface::Value>(Position)> get_cache_func_;
         
         void DFS(std::deque<Impl*>& stack, Position pos, Impl* impl_ref, std::unordered_set<Position, PositionHasher>& visited);
     };
@@ -86,6 +84,5 @@ private:
     Position pos_;
     const SheetInterface& sheet_;
     bool is_referenced_ = false;
-    std::function<std::optional<CellInterface::Value>(Position)> get_cache_func_;
     Impl* GetImplRef();
 };

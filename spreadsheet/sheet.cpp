@@ -22,7 +22,7 @@ void Sheet::SetCell(Position pos, std::string text) {
         ((Cell*)(pos_to_cell_.at(pos).get()))->Set(text);
     }
     else {
-        std::unique_ptr<CellInterface> cell = std::make_unique<Cell>(pos, *this, GetCacheFunc{*this});
+        std::unique_ptr<CellInterface> cell = std::make_unique<Cell>(pos, *this);
         ((Cell*)(cell.get()))->Set(text);
 
         cache_[pos] = cell.get()->GetValue();
@@ -184,7 +184,11 @@ void Sheet::PrintValues(std::ostream& output) const {
         for (int col = 0; col < printable_size_.cols; ++col) {
             auto pos = Position{row, col};
             if (pos_to_cell_.count(pos)) {
-                output << pos_to_cell_.at(pos)->GetValue();
+                if (cache_.at(pos).has_value()) {
+                    output << cache_.at(pos).value();
+                } else {
+                    output << pos_to_cell_.at(pos)->GetValue();
+                }
             }
             if (col == (printable_size_.cols -1)) {
                 output << '\n';
@@ -216,15 +220,6 @@ void Sheet::InvalidateCache(Position pos) {
     for (const auto& parent : ((Cell*)GetCell(pos))->GetParents()) {
         cache_[parent] = std::nullopt;
     }
-}
-
-std::optional<CellInterface::Value> Sheet::GetCache(Position pos) {
-    if (cache_.count(pos) > 0) {
-        return cache_.at(pos);
-    } else {
-        return std::nullopt;
-    }
-    
 }
 
 std::unique_ptr<SheetInterface> CreateSheet() {

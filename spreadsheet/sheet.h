@@ -9,8 +9,6 @@
 #include <array>
 #include <optional>
 
-class GetCacheFunc;
-
 class Sheet : public SheetInterface {
 public:
     ~Sheet();
@@ -27,8 +25,6 @@ public:
     void PrintValues(std::ostream& output) const override;
     void PrintTexts(std::ostream& output) const override;
 
-    std::optional<CellInterface::Value> GetCache(Position pos);
-
 private:
     std::unordered_map<Position, std::unique_ptr<CellInterface>, PositionHasher> pos_to_cell_;
     Size printable_size_;
@@ -40,14 +36,4 @@ private:
     std::deque<Cell*> stack_;
 
     void InvalidateCache(Position pos);
-};
-
-class GetCacheFunc {
-public:
-    GetCacheFunc(SheetInterface& sheet) : sheet_(sheet) { }
-    std::optional<CellInterface::Value> operator()(Position pos){
-        return ((Sheet&)sheet_).GetCache(pos);
-    }
-private:
-    SheetInterface& sheet_;
 };
