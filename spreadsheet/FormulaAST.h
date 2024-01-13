@@ -6,6 +6,7 @@
 #include <forward_list>
 #include <functional>
 #include <stdexcept>
+#include <unordered_set>
 
 namespace ASTImpl {
 class Expr;
@@ -23,7 +24,7 @@ public:
     FormulaAST& operator=(FormulaAST&&) = default;
     ~FormulaAST();
 
-    double Execute(/*добавьте нужные аргументы*/ args) const;
+    double Execute(std::function<CellInterface*(Position)> get_cell_func) const;
     void PrintCells(std::ostream& out) const;
     void Print(std::ostream& out) const;
     void PrintFormula(std::ostream& out) const;
@@ -38,12 +39,10 @@ public:
 
 private:
     std::unique_ptr<ASTImpl::Expr> root_expr_;
-
-    // physically stores cells so that they can be
-    // efficiently traversed without going through
-    // the whole AST
     std::forward_list<Position> cells_;
 };
 
 FormulaAST ParseFormulaAST(std::istream& in);
 FormulaAST ParseFormulaAST(const std::string& in_str);
+
+

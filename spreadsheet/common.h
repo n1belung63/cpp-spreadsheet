@@ -26,6 +26,16 @@ struct Position {
     static const Position NONE;
 };
 
+struct PositionHasher { 
+    size_t operator() (Position pos) const {          
+        size_t h_col = u_hasher_((uint64_t)pos.col);
+        size_t h_row = u_hasher_((uint64_t)pos.row);        
+        return h_col + h_row * 37;
+    }
+private:
+    std::hash<uint64_t> u_hasher_;
+};
+
 struct Size {
     int rows = 0;
     int cols = 0;
@@ -42,13 +52,13 @@ public:
         Div0,  // в результате вычисления возникло деление на ноль
     };
 
-    FormulaError(Category category);
+    FormulaError(Category category) : category_(category) {}
 
-    Category GetCategory() const;
+    Category GetCategory() const { return category_; }
 
-    bool operator==(FormulaError rhs) const;
+    bool operator==(FormulaError rhs) const { return category_ == rhs.GetCategory(); }
 
-    std::string_view ToString() const;
+    std::string_view ToString() const { return "aaaa"; }
 
 private:
     Category category_;
