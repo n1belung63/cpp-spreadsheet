@@ -39,8 +39,6 @@ private:
         virtual void SetParent(const Position& parent_pos) = 0;
     };
 
-    // class EmptyImpl : public Impl { };
-
     class TextImpl : public Impl {
     public:
         TextImpl(CellParents& parents);

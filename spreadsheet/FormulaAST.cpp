@@ -22,7 +22,6 @@ enum ExprPrecedence {
     EP_END,
 };
 
-// a bit is set when the parentheses are needed
 enum PrecedenceRule {
     PR_NONE = 0b00,                // never needed
     PR_LEFT = 0b01,                // needed for a left child
@@ -136,14 +135,11 @@ public:
             case Divide:
                 return EP_DIV;
             default:
-                // have to do this because VC++ has a buggy warning
                 assert(false);
                 return static_cast<ExprPrecedence>(INT_MAX);
         }
     }
 
-// Реализуйте метод Evaluate() для бинарных операций.
-// При делении на 0 выбрасывайте ошибку вычисления FormulaError
     double Evaluate(std::function<CellInterface*(Position)> get_cell_func) const override {
         switch (type_) {
             case Add: {
@@ -219,7 +215,6 @@ public:
         return EP_UNARY;
     }
 
-// Реализуйте метод Evaluate() для унарных операций.
     double Evaluate(std::function<CellInterface*(Position)> get_cell_func) const override {
         switch (type_) {
             case UnaryPlus:
@@ -256,7 +251,6 @@ public:
         return EP_ATOM;
     }
 
-// Для чисел метод возвращает значение числа.
     double Evaluate(std::function<CellInterface*(Position)>) const override {
         return value_;
     }

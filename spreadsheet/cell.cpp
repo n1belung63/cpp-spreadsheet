@@ -128,8 +128,6 @@ std::unordered_set<Position, PositionHasher> Cell::FormulaImpl::GetParents() con
     return parents_;
 }
 
-
-// Реализуйте следующие методы
 Cell::Cell(Position pos, SheetInterface& sheet)
 : pos_(pos), sheet_(sheet) { }
 
